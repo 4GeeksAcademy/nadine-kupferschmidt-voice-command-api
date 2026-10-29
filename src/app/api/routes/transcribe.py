@@ -102,6 +102,12 @@ async def transcribe_and_run_flow(request: Request) -> TranscribeFlowResponse:
             detail="Groq returned an invalid instruction: expected endpoint, method and object params.",
         ) from error
 
+    if instruction.endpoint == "unsupported":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo puedo ayudarte con tu lista de tareas. Puedes decir, por ejemplo: 'añade comprar leche', 'muéstrame mis tareas', 'marca la tarea 1 como hecha' o 'elimina la tarea 2'.",
+        )
+
     task_match = re.fullmatch(r"/tasks/([0-9]+)", instruction.endpoint)
     try:
         if instruction.method == "GET" and instruction.endpoint == "/tasks":

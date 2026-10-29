@@ -21,6 +21,7 @@ Endpoints disponibles:
 - DELETE /tasks/{id} → eliminar una tarea. params: {}
 
 Reglas:
+- Si la frase no tiene relación con la lista de tareas, responde exactamente: {"endpoint": "unsupported", "method": "NONE", "params": {}}
 - El número de la tarea va dentro de "endpoint" (ejemplo: "/tasks/3"), nunca dentro de "params".
 - "method" siempre en mayúsculas.
 - Si no hay parámetros, usa "params": {}.
@@ -33,6 +34,7 @@ Ejemplos:
 "cambia la tarea 3 a llamar al dentista" → {"endpoint": "/tasks/3", "method": "PATCH", "params": {"title": "Llamar al dentista"}}
 "elimina la tarea 1" → {"endpoint": "/tasks/1", "method": "DELETE", "params": {}}
 "delete task 4" → {"endpoint": "/tasks/4", "method": "DELETE", "params": {}}
+"¿cuál es la capital de Colombia?" → {"endpoint": "unsupported", "method": "NONE", "params": {}}
 """
 
 

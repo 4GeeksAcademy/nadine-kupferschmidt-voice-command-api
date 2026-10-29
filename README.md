@@ -270,6 +270,7 @@ No hay detección de intención en Python. El modelo decide qué acción represe
 
 ### 5. Manejo de errores
 
+- Se devuelve `400` con un mensaje amable y ejemplos si el modelo indica `endpoint: "unsupported"` porque la frase no trata sobre la lista de tareas; no se ejecuta ninguna acción.
 - Se devuelve `404` cuando se intenta reemplazar, actualizar o eliminar una tarea que no existe.
 - Se devuelve `502` si Groq devuelve JSON inválido o una instrucción no soportada. En el flujo de `/transcribe` también se comprueban la estructura de la instrucción y los parámetros antes de ejecutar la acción.
 
