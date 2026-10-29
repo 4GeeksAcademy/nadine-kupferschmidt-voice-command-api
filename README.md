@@ -205,3 +205,80 @@ If the transcription is correct but the action is wrong, the problem is in `/ins
 ---
 
 This and many other projects are built by students as part of the [Coding Bootcamps](https://4geeksacademy.com/) at 4Geeks Academy. Learn more about the [Full-Stack Software Developer](https://4geeksacademy.com/en/career-programs/full-stack), [Data Science & Machine Learning](https://4geeksacademy.com/en/career-programs/data-science-ml), [Cybersecurity](https://4geeksacademy.com/en/career-programs/cybersecurity), and [AI Engineering](https://4geeksacademy.com/en/career-programs/ai-engineering) programs.
+
+## Mi implementación
+
+### 1. Cómo ejecutarlo
+
+Desde la raíz del proyecto, instala las dependencias del backend y copia el archivo de ejemplo:
+
+```bash
+uv sync
+cp .env.example .env
+```
+
+Completa `GROQ_API_KEY` en `.env` con tu propia clave de Groq y configura `GROQ_MODEL=openai/gpt-oss-20b`.
+
+Arranca el backend:
+
+```bash
+uv run uvicorn src.main:app --reload
+```
+
+En otra terminal, prepara el frontend la primera vez:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env
+```
+
+Configura `VITE_API_BASE_URL` en `frontend/.env` con la URL del backend. Para arrancar el frontend desde la raíz del proyecto:
+
+```bash
+cd frontend && npm run dev
+```
+
+### 2. Variables de entorno
+
+El backend lee estas variables de `.env`, que se prepara a partir de `.env.example`:
+
+- `GROQ_API_KEY`: clave para acceder a Groq, tanto para transcribir el audio como para generar la instrucción. Debe completarse con una clave propia y no compartirse.
+- `GROQ_MODEL`: modelo que convierte el texto en una instrucción JSON. En mi implementación uso `openai/gpt-oss-20b`; hay que indicar ese valor en `.env`, porque el valor por defecto del código es otro.
+- `GROQ_TRANSCRIPTION_MODEL`: modelo que convierte el audio en texto. El valor por defecto del código es `whisper-large-v3-turbo`.
+- `REQUEST_TIMEOUT_SECONDS`: tiempo máximo, en segundos, para las peticiones a Groq. El valor por defecto es `45`.
+- `ALLOWED_ORIGINS`: direcciones del frontend que pueden acceder al backend desde el navegador mediante CORS. Se pueden indicar varias, separadas por comas.
+
+El frontend usa su propio archivo `frontend/.env`: `VITE_API_BASE_URL` indica la URL del backend. No debe contener la clave de Groq.
+
+### 3. Archivos que implementé
+
+- `src/app/api/routes/tasks.py`: implementa listar, crear, reemplazar, actualizar y eliminar tareas; las guarda en memoria, por lo que se pierden al reiniciar el backend.
+- `src/app/api/routes/instruction.py`: recibe una transcripción en `POST /instruction` y devuelve la instrucción JSON del modelo, sin ejecutar la acción.
+- `src/app/services/instruction_service.py`: define el system prompt, consulta el modelo de Groq y convierte su respuesta JSON en un diccionario.
+- `src/app/api/routes/transcribe.py`: recibe audio o texto, transcribe el audio con Groq cuando corresponde, reutiliza el servicio de instrucciones, valida el JSON y ejecuta la acción sobre las tareas.
+
+### 4. Cómo funciona el system prompt
+
+El system prompt pide un formato exacto con `endpoint`, `method` y `params`, sin explicaciones ni Markdown. Así el backend puede leer y validar la respuesta como JSON.
+
+Incluye la lista de acciones disponibles: `GET /tasks`, `POST /tasks`, `PUT /tasks/{id}`, `PATCH /tasks/{id}` y `DELETE /tasks/{id}`. También define reglas: el identificador va en la ruta, el método va en mayúsculas, los parámetros vacíos se representan con `{}` y los títulos no deben incluir las palabras usadas para dar la orden.
+
+Los ejemplos muestran cómo convertir frases en español e inglés en ese formato. Se usa `temperature=0` para reducir la variación de las respuestas y favorecer un resultado consistente; esto no garantiza que todas las respuestas sean correctas, por eso también se validan.
+
+No hay detección de intención en Python. El modelo decide qué acción representa la frase. El bloque `if/elif` de `transcribe.py` solo selecciona y ejecuta la operación indicada por el JSON validado; no busca palabras en la transcripción para decidir la intención.
+
+### 5. Manejo de errores
+
+- Se devuelve `404` cuando se intenta reemplazar, actualizar o eliminar una tarea que no existe.
+- Se devuelve `502` si Groq devuelve JSON inválido o una instrucción no soportada. En el flujo de `/transcribe` también se comprueban la estructura de la instrucción y los parámetros antes de ejecutar la acción.
+
+### 6. Notas para Codespaces
+
+El puerto `8000` del backend debe estar marcado como **público** en la pestaña de puertos de Codespaces.
+
+En `frontend/.env`, configura `VITE_API_BASE_URL` con la URL HTTPS que Codespaces asigna al puerto `8000`, sin añadir `/transcribe` ni otras rutas.
+
+En el `.env` del backend, agrega la URL HTTPS del puerto `5173` a `ALLOWED_ORIGINS`. Debe ser el origen completo del frontend, sin rutas ni barra final; si mantienes otros orígenes, sepáralos por comas.
+
+Reinicia el backend y el frontend después de cambiar sus variables de entorno.
